@@ -120,14 +120,24 @@ block and restore access.
 
 ## Day 4 — Docker Fundamentals
 
-**Concepts:**
-- Image —
-- Container —
-- Port mapping —
-- Volume —
-- Network —
+**Setup:** installed Docker Engine directly (not Docker Desktop) via Docker's official apt repository, enabled it with `sudo systemctl enable --now docker`, and added my user to the `docker` group with `sudo usermod -aG docker $USER` so `docker` commands work without `sudo`.
 
-**Practice:** ran the official Nginx container, accessed it from the browser at `http://localhost:<port>`.
+**Gotcha:** the group change didn't take effect in the terminal tab it was run in, or even in a new tab in the same window — `groups` still didn't list `docker` even though `getent group docker` confirmed the membership was saved. Had to fully restart the WSL instance (`wsl --shutdown` from Windows PowerShell, then reopen Ubuntu) to get a truly fresh session that picked up the new group. Lesson: a "new terminal tab" isn't always a new enough session for Linux group changes — sometimes the whole environment needs restarting.
+
+**Concepts:**
+- **Image** — a read-only template for a container: application code, dependencies, and OS libraries bundled together, pulled from a registry like Docker Hub (e.g. `nginx`, `hello-world`)
+- **Container** — a running instance of an image; an isolated process with its own filesystem view, but sharing the host machine's kernel (much lighter than a full VM)
+- **Port mapping** — connects a port on the host machine to a port inside the container (`-p 8080:80` = host's 8080 → container's 80), since a container's ports aren't reachable from outside by default
+- **Volume** — persistent storage that survives even if the container is deleted; without one, anything written inside a container is lost when it's removed
+- **Network** — a virtual network Docker creates so containers can reach each other (or the outside world) in a controlled way
+
+**Practice:**
+```bash
+docker run hello-world
+docker run -d --name my-nginx -p 8080:80 nginx
+docker ps
+```
+Ran the official Nginx image detached (`-d`) with port 8080 on the host mapped to port 80 in the container, then confirmed it from a Windows browser at `http://localhost:8080` — the default "Welcome to nginx!" page loaded. `docker ps` showed the running container, its image, and the exact port mapping (`0.0.0.0:8080->80/tcp`).
 
 ---
 
