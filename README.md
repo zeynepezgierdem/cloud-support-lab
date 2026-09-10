@@ -100,12 +100,21 @@ block and restore access.
 
 | Command | What it does | Notes |
 |---|---|---|
-| `ip addr` | | |
-| `ip route` | | |
-| `ping` | | |
-| `curl` | | |
-| `ss -tulpn` | | |
-| `nslookup` | | |
+| `ip addr` | Shows network interfaces and their IP addresses | `eth0` is WSL's main interface |
+| `ip route` | Shows the routing table | `default via ...` line is the gateway |
+| `ping -c 4 8.8.8.8` | Tests raw connectivity to a known host | `-c 4` limits it to 4 packets instead of running forever |
+| `curl -I <url>` | Fetches just the HTTP headers from a URL | Fast way to confirm a service is reachable without pulling the full response |
+| `ss -tulpn` | Lists every port currently listening for connections | `-t`=TCP, `-u`=UDP, `-l`=listening only, `-p`=show owning process, `-n`=numeric ports |
+| `nslookup <domain>` | Resolves a domain name to an IP address | Not installed by default — needed `sudo apt install dnsutils -y` first |
+
+**Web server + port block/restore exercise:**
+- `python3 -m http.server 8000 &` — started a simple web server in the background, confirmed with `curl -I http://localhost:8000` → `200 OK`, and confirmed it in the port list with `ss -tulpn | grep 8000`
+- `sudo apt install ufw -y`, `sudo ufw allow OpenSSH`, `sudo ufw enable` — set up the firewall, allowing SSH first specifically to avoid locking myself out (standard real-world precaution)
+- `sudo ufw deny 8000` — blocked the port
+- **Key lesson:** `curl http://localhost:8000` and even `curl http://<own-eth0-IP>:8000` *still succeeded* after blocking the port. This is because loopback traffic, and traffic a Linux machine sends to its own IP address, gets routed internally and bypasses normal firewall INPUT filtering — this isn't a bug, it's expected host-firewall behavior.
+- To actually observe the block, had to send the request from a genuinely separate origin: running `curl.exe` (the native Windows binary, reachable from inside WSL via interop) against the WSL VM's IP correctly returned `Connection timed out after 5011 milliseconds`, since that traffic truly crosses the network boundary the firewall filters.
+- `sudo ufw delete deny 8000` restored access — confirmed back to `200 OK` from the same external (`curl.exe`) origin.
+- **Takeaway for support work:** if a "the port seems open even though we blocked it" ticket ever comes up, check whether the test was run from the same host — local-origin tests don't exercise firewall rules the same way real client traffic does.
 
 ---
 
