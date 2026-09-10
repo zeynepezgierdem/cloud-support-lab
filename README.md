@@ -143,13 +143,30 @@ Ran the official Nginx image detached (`-d`) with port 8080 on the host mapped t
 
 ## Day 5 — Containerize a Tiny Python Service
 
-A minimal Python API with a `/health` endpoint, packaged with Docker.
+A minimal Flask API with a single `/health` endpoint, packaged with Docker.
 
-- [`app/`](./app) — the service source
+- [`app/main.py`](./app/main.py) — the service source
 - [`app/Dockerfile`](./app/Dockerfile)
 - [`app/requirements.txt`](./app/requirements.txt)
 
 Run instructions: see [`app/README.md`](./app/README.md).
+
+```bash
+cd app
+docker build -t hello-api .
+docker run -d --name hello-api -p 5000:5000 hello-api
+curl http://localhost:5000/health
+```
+
+**Issues hit while building this:**
+
+1. **`pip install` failed inside the build with `Temporary failure in name resolution`.** The container couldn't resolve DNS to reach PyPI, even though the host machine's own networking worked fine. Cause: `/etc/resolv.conf` on this WSL2 host points to `10.255.255.254`, WSL's internal DNS forwarder back to Windows — but Docker's container network (a separate bridge) can't reach that address. Fix: pointed the Docker daemon at a public DNS server directly via `/etc/docker/daemon.json`:
+   ```json
+   {"dns": ["8.8.8.8", "1.1.1.1"]}
+   ```
+   then `sudo systemctl restart docker`, after which the build succeeded.
+
+2. **First `curl` after `docker run -d` returned `Connection reset by peer`.** Not a real failure — `docker run -d` returns control immediately, before Flask's dev server had finished starting up inside the container. `docker ps -a` showed the container as `Up`, and `docker logs hello-api` confirmed Flask was running and listening on `0.0.0.0:5000`; a second `curl` a few seconds later succeeded normally. Lesson: a fresh detached container needs a moment before its app inside is actually ready — don't read a request failure immediately after start as proof the app is broken.
 
 ---
 
