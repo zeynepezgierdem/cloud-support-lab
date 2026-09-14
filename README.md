@@ -6,6 +6,10 @@ and a small containerized Python service deployed and debugged end-to-end.
 
 Environment: Ubuntu (WSL2) on Windows.
 
+## Project Summary
+
+Completed a self-directed, week-long Linux and Docker support engineering lab, covering SSH, Linux permissions, process/service management (systemd), networking, firewalls, and containerization. Designed, built, and deployed a containerized Python (Flask) REST API with environment-based configuration and startup-time config validation. Independently diagnosed and resolved five distinct real-world infrastructure failures — a Docker/WSL2 DNS resolution failure blocking image builds, a Linux group-permission propagation issue, a firewall (`ufw`) loopback-bypass edge case, an unplanned container outage from a host restart, and application misconfiguration scenarios — each documented below with root cause, fix, and prevention. Used core Linux and Docker diagnostic tooling (`systemctl`, `journalctl`, `ss`, `ip`, `docker inspect`, `docker logs`, `docker ps`) throughout.
+
 ---
 
 ## Day 1 — Lab Setup
