@@ -188,11 +188,19 @@ Deliberate failures introduced, then diagnosed with `docker ps`, `docker logs`,
 
 ### Screenshot
 
-_(service running, added here)_
+The service running and responding to a health check:
+
+![Service running](./screenshots/service-running.png)
 
 ### What I learned
 
--
+- **Reading evidence beats guessing.** Every failure this week (wrong port, stopped container, missing env var, bad config, the DNS build failure) was solvable in seconds once I actually looked at `docker logs`, `docker ps -a`, or `ss -tulpn` instead of assuming what was wrong.
+- **"Not working" has more than one shape, and the shape tells you where to look.** A clean, healthy log followed by an abrupt stop points at the environment (a crash, a reboot). An explicit error message right before the stop points at the app. Knowing which one you're looking at saves a lot of wasted investigation time.
+- **Host-level tools don't always test what you think they test.** Curling `localhost` (or even your own machine's real IP) to check a firewall rule doesn't actually exercise that rule, because loopback and self-addressed traffic bypass normal firewall filtering. Real client traffic has to come from somewhere else to prove anything.
+- **Containers inherit the host's networking assumptions, but not perfectly.** The Docker DNS failure (`Temporary failure in name resolution`) happened because WSL2's DNS forwarder address isn't reachable from inside Docker's own bridge network — a mismatch that's invisible until you actually try to build something that needs the internet.
+- **A "new terminal" isn't always a new session.** Linux group membership changes (like adding a user to the `docker` group) don't apply retroactively to already-running shells, and in WSL that can mean even a fresh terminal tab shares the same underlying instance — a full `wsl --shutdown` was needed to get a truly clean session.
+- **Validating configuration at startup, with a specific error message, turns a mystery outage into a two-second fix.** The `hello-api` service refusing to start with `FATAL: required environment variable SERVICE_NAME is not set` was more useful than any amount of clever monitoring would have been after the fact.
+- **Documentation is part of the work, not an afterthought.** Writing down each command and each failure as it happened (rather than reconstructing it later) made the troubleshooting log both more accurate and much less effort to produce.
 
 ---
 
